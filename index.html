@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Cursor Crusader</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body style="margin:0; padding:0; background:black;">
+        <canvas id="canvas" width="1200" height="700" style="border:1px solid white;" tabindex="1"></canvas>
+
+        <script>
+            /*
+             *from 10/15/2025 to 10/25/2025 
+             *I worked on getting all together and getting button and dot classes working and have attacks working
+             *Also got the arena to show up
+             */
+            var canvas = document.getElementById("canvas");
+            var ctx = canvas.getContext("2d");
+            var mouseXPos = 0;
+            var mouseYPos = 0;
+            var mouseLeftDown = false;
+            var playerMaxHealth = 100;
+            var playerHealth = 10;
+            var shards = 0;
+
+            var gameScreen = "menu";
+
+            // arena init
+            var arenaX = 275;
+            var arenaY = 25;
+            var arenaSize = 650;
+            var arenaOpen = false;
+            //enemies init
+            var enemies = [];
+            var enemyProjectiles = [];
+            var lastEnemySpawn = 0;
+            var enemySpawnInterval = 5000; // 10 seconds
+            var playerHitInterval = 1000;
+
+            // Dot class
+            class Dot {
+                constructor(x, y, radius, colour, arenaX, arenaY, arenaSize) {
+                    this.x = x;
+                    this.y = y;
+                    this.radius = radius;
+                    this.colour = colour;
+                    this.arenaX = arenaX;
+                    this.arenaY = arenaY;
+                    this.arenaSize = arenaSize;
+                    this.targetX = x;
+                    this.targetY = y;
+                    this.ease = 0.05;
+
+                    this.isAttacking = false;
+                    this.attackRadius = 0;
+                    this.attackMaxRadius = this.radius * (4 / 3);
+                    this.attackColour = "yellow";
+                    this.attackDamage = 1;
+                }
+
+                setTarget(x, y) {
+                    this.targetX = x;
+                    this.targetY = y;
+                }
+
+                attack() {
+                    // start attack
+                    this.isAttacking = true;
+                    this.attackRadius = this.radius; // or maybe 0 to grow from nothing
+                    this.attackMaxRadius = this.radius * (5 / 3);
+                }
+
+                update() {
+                    // move toward target
+                    this.x += (this.targetX - this.x) * this.ease;
+                    this.y += (this.targetY - this.y) * this.ease;
+
+                    // keep inside arena
+                    var minX = this.arenaX + this.radius;
+                    var minY = this.arenaY + this.radius;
+                    var maxX = this.arenaX + this.arenaSize - this.radius;
+                    var maxY = this.arenaY + this.arenaSize - this.radius;
+
+                    if (this.x < minX + this.radius / 5)
+                        this.x = minX + this.radius / 5;
+                    if (this.y < minY + this.radius / 5)
+                        this.y = minY + this.radius / 5;
+                    if (this.x > maxX - this.radius / 5)
+                        this.x = maxX - this.radius / 5;
+                    if (this.y > maxY - this.radius / 5)
+                        this.y = maxY - this.radius / 5;
+
+                    // handle attack growth
+                    if (this.isAttacking) {
+                        this.attackRadius += (this.attackMaxRadius - this.attackRadius) * 0.2;
+
+                        if (this.attackRadius >= this.attackMaxRadius * 0.99) {
+                            this.isAttacking = false;
+                        }
+                    }
+                }
+
+                draw(ctx) {
+                    // draw the dot
+                    ctx.fillStyle = this.colour;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // draw attack if active
+                    if (this.isAttacking) {
+                        ctx.strokeStyle = this.attackColour;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(this.x, this.y, this.attackRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+
+                tryClick(mouseLeftDown) {
+
+                    if (mouseLeftDown) { //if left mouse down then it attacks
+                        this.attack();
+                        return true;
+                    }
+                    return false;
+                }
+            }
+
+
+            // Button class (simple)
+            class Button { //for most of this button class https://www.youtube.com/watch?v=cGg6A-U9q3E i learned from watching this youtube video
+                constructor(text, x, y, width, height, fillColour, textColour, xOffset, onClick) {
+                    this.text = text;
+                    this.x = x;
+                    this.y = y;
+                    this.width = width;
+                    this.height = height;
+                    this.fillColour = fillColour;
+                    this.textColour = textColour;
+                    this.xOffset = xOffset !== undefined ? xOffset : 0;
+                    if (typeof onClick === "function") {
+                        this.onClick = onClick;
+                    } else {
+                        this.onClick = function () { };
+                    }
+                    this.hover = false;
+                }
+                draw(ctx, mouseX, mouseY) {
+                    ctx.fillStyle = this.fillColour;
+                    ctx.fillRect(this.x, this.y, this.width, this.height);
+
+                    ctx.fillStyle = this.textColour;
+                    ctx.font = "25px Courier";
+                    ctx.fillText(this.text, this.x + this.xOffset, this.y + this.height / 2 + 5);
+
+                    if (mouseX > this.x && mouseX < this.x + this.width &&
+                            mouseY > this.y && mouseY < this.y + this.height) {
+                        this.hover = true;
+                        ctx.strokeStyle = "yellow";
+                        ctx.lineWidth = 3;
+                        ctx.strokeRect(this.x, this.y, this.width, this.height);
+                    } else {
+                        this.hover = false;
+                    }
+                }
+                handleClick(mouseX, mouseY, mouseLeftDown) {
+                    if (this.hover && mouseLeftDown) {
+                        this.onClick();
+                        return true;
+                    }
+                    return false;
+                }
+            }
+            class Enemy {
+                constructor(positionX, positionY, size, health, damage, speed) {
+                    this.x = positionX;
+                    this.y = positionY;
+                    this.size = size;
+                    this.health = health;
+                    this.damage = damage;
+                    this.speed = speed;
+                    this.colour = "red";
+                    this.shootTimer = 0;
+                }
+
+                update(dotX, dotY) {
+                    // Move toward player
+                    var deltaX = dotX - this.x;
+                    var deltaY = dotY - this.y;
+                    var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    if (distance > 0) {
+                        this.x += (deltaX / distance) * this.speed;
+                        this.y += (deltaY / distance) * this.speed;
+                    }
+
+                    // Shoot every 120 frames (about 2 seconds)
+                    this.shootTimer++;
+                    if (this.shootTimer > 30) {
+                        this.shoot(dotX, dotY);
+                        this.shootTimer = 0;
+                    }
+                }
+
+                shoot(targetX, targetY) {
+                    var deltaX = targetX - this.x;
+                    var deltaY = targetY - this.y;
+                    var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    var projectileSpeed = 2;
+
+                    var vx = 0;
+                    var vy = 0;
+                    if (distance > 0) {
+                        vx = (deltaX / distance) * projectileSpeed;
+                        vy = (deltaY / distance) * projectileSpeed;
+                    }
+
+                    var newProjectile = {
+                        x: this.x,
+                        y: this.y,
+                        vx: vx,
+                        vy: vy,
+                        radius: 5,
+                        colour: "White"
+                    };
+
+                    enemyProjectiles[enemyProjectiles.length] = newProjectile;
+                }
+
+                draw(ctx) {
+                    ctx.fillStyle = this.colour;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Health bar
+                    ctx.fillStyle = "green";
+                    ctx.fillRect(this.x - this.size, this.y - this.size - 10, this.health * 10, 4);
+                }
+            }
+
+            // -------------------- HELPERS --------------------
+            function circleCollision(x1, y1, r1, x2, y2, r2) {
+                var deltaX = x2 - x1;
+                var deltaY = y2 - y1;
+                var distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                return distance < r1 + r2;
+            }
+
+            function spawnEnemy() {
+                var size = 20;
+                var health = 3;
+                var damage = 1;
+                var speed = 0.3;
+
+                var spawnX = arenaX + size + Math.random() * (arenaSize - size * 2);
+                var spawnY = arenaY + size + Math.random() * (arenaSize - size * 2);
+
+                var newEnemy = new Enemy(spawnX, spawnY, size, health, damage, speed);
+
+                // manual append
+                enemies[enemies.length] = newEnemy;
+            }
+
+            function updateProjectiles() {
+                for (var i = enemyProjectiles.length - 1; i >= 0; i--) {
+                    var projectileVar = enemyProjectiles[i];
+                    projectileVar.x += projectileVar.vx;
+                    projectileVar.y += projectileVar.vy;
+
+                    // Remove if off screen
+                    if (projectileVar.x < arenaX || projectileVar.x > arenaX + arenaSize ||
+                            projectileVar.y < arenaY || projectileVar.y > arenaY + arenaSize) {
+                        enemyProjectiles.splice(i, 1);
+                        continue;
+                    }
+
+                    // Player hit
+                    if (circleCollision(projectileVar.x, projectileVar.y, projectileVar.radius,
+                            dot.x, dot.y, dot.radius)) {
+
+                        playerHealth -= 1;
+                        playerHealthBar.set(playerHealth);
+
+                        enemyProjectiles.splice(i, 1);
+
+                        if (playerHealth <= 0) {
+                            gameScreen = "lose";
+                        }
+                    }
+                }
+            }
+
+
+            function drawProjectiles() {
+                for (var i = 0; i < enemyProjectiles.length; i++) {
+                    var projectileVar = enemyProjectiles[i];
+
+                    ctx.fillStyle = projectileVar.colour;
+                    ctx.beginPath();
+                    ctx.arc(projectileVar.x, projectileVar.y, projectileVar.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+            class Bar {
+                constructor(x, y, width, height, maxValue, colour) {
+                    this.x = x;
+                    this.y = y;
+                    this.w = width;
+                    this.h = height;
+
+                    this.maxValue = maxValue;
+                    this.value = maxValue;
+
+                    this.colour = colour;
+                    this.borderColour = "rgba(255,255,255,0.8)";
+                    this.bgColour = "rgba(0,0,0,0.3)";
+                }
+
+                set(value) {
+                    this.value = Math.max(0, Math.min(value, this.maxValue));
+                }
+
+                draw(ctx) {
+                    // background
+                    ctx.fillStyle = this.bgColour;
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                    // bar value
+                    var percent = this.value / this.maxValue;
+                    ctx.fillStyle = this.colour;
+                    ctx.fillRect(this.x, this.y, this.w * percent, this.h);
+
+                    // border
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = this.borderColour;
+                    ctx.strokeRect(this.x, this.y, this.w, this.h);
+                }
+            }
+
+
+            // Create instances
+            var dot = new Dot(600, 350, 25, "white", arenaX, arenaY, arenaSize);
+
+            var startButton = new Button("Start", 550, 360, 100, 50, "white", "black", 10, function () {
+                gameScreen = "arena1";
+                arenaOpen = false;
+            });
+
+            var backButton = new Button("Back", 10, 10, 75, 25, "white", "black", 10, function () {
+                gameScreen = "menu";
+                arenaOpen = false;
+            });
+            var losePlayAgainBtn = new Button("Play Again", 500, 350, 200, 60, "white", "black", 25, function () {
+                restartGame();
+            });
+
+            var loseUpgradesBtn = new Button("Upgrades", 500, 420, 200, 60, "white", "black", 35, function () {
+                // do nothing yet
+            });
+
+            var loseSettingsBtn = new Button("Settings", 500, 490, 200, 60, "white", "black", 35, function () {
+                // do nothing yet
+            });
+
+            var loseMenuBtn = new Button("Menu", 500, 560, 200, 60, "white", "black", 55, function () {
+                gameScreen = "menu";
+            });
+
+            var playerHealthBar = new Bar(925, 25, 150, 10, playerMaxHealth, "green");
+            function init() {
+                canvas.addEventListener("mousemove", function (evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    mouseXPos = evt.clientX - rect.left;
+                    mouseYPos = evt.clientY - rect.top;
+                });
+                canvas.addEventListener("mousedown", function (evt) {
+                    if (evt.button === 0) {
+                        mouseLeftDown = true;
+                    }
+                });
+                canvas.addEventListener("mouseup", function (evt) {
+                    if (evt.button === 0) {
+                        mouseLeftDown = false;
+                    }
+                });
+                canvas.addEventListener("contextmenu", function (evt) {
+                    evt.preventDefault();
+                });
+            }
+
+            function solidRect(x, y, w, h, colour) {
+                ctx.fillStyle = colour;
+                ctx.beginPath();
+                ctx.fillRect(x, y, w, h);
+            }
+            function drawMediumText(text, x, y, colour) {
+                ctx.fillStyle = colour;
+                ctx.font = "25px Courier";
+                ctx.fillText(text, x, y);
+            }
+            function drawLargeText(text, x, y, colour) {
+                ctx.fillStyle = colour;
+                ctx.font = "35px Courier";
+                ctx.fillText(text, x, y);
+            }
+            function arenaRect(x, y, width, height, colour, thickness) {
+                ctx.strokeStyle = colour;
+                ctx.lineWidth = thickness;
+                ctx.beginPath();
+                ctx.strokeRect(x, y, width, height);
+                ctx.stroke();
+            }
+            function restartGame() {
+                playerHealth = playerMaxHealth;
+                playerHealthBar.set(playerMaxHealth);
+
+                enemies = [];
+                enemyProjectiles = [];
+                lastEnemySpawn = Date.now();
+
+                dot.x = 600;
+                dot.y = 350;
+                dot.setTarget(600, 350);
+
+                gameScreen = "arena1";
+            }
+
+            function draw() {
+                var currentTime = Date.now(); //getting the time in milliseconds
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (gameScreen === "menu") {
+                    drawLargeText("Welcome to Cursor Crusader", 350, 233, "white");
+                    drawMediumText("Avoid projectiles and click on the enemies", 320, 260, "white");
+                    
+                    startButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (startButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "arena1") {
+                    
+                    
+                    if (!arenaOpen) {
+                        dot.x = 600;
+                        dot.y = 350;
+                        dot.setTarget(600, 350);
+                        arenaOpen = true;
+                        // clear any existing enemies/projectiles when opening arena
+                        enemies = [];
+                        enemyProjectiles = [];
+                        lastEnemySpawn = Date.now();
+                        
+                    }
+
+                    if (Date.now() - lastEnemySpawn > enemySpawnInterval) {
+                        spawnEnemy();
+                        lastEnemySpawn = Date.now();
+                    }
+                    playerHealth = playerMaxHealth; //resetting the player health when leaving the arena
+                    playerHealthBar.draw(ctx);
+                    // Update and draw enemies (iterate backwards so splice is safe)
+                    for (var i = enemies.length - 1; i >= 0; i--) {
+                        var enemyVar = enemies[i];
+                        enemyVar.update(dot.x, dot.y);
+                        enemyVar.draw(ctx);
+
+                        // Damage enemy if hit by player's attack
+                        if (dot.isAttacking && circleCollision(dot.x, dot.y, dot.attackRadius, enemyVar.x, enemyVar.y, enemyVar.size)) {
+                            enemyVar.health -= dot.attackDamage;
+
+                            if (enemyVar.health <= 0) {
+                                shards += 1;
+                                enemies.splice(i, 1);
+                            }
+                        }
+                    }
+
+                    // Bullets
+                    updateProjectiles();
+                    drawProjectiles();
+                    
+                    arenaRect(arenaX, arenaY, arenaSize, arenaSize, "white", 10);
+
+                    backButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (backButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    if (dot.tryClick(mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    dot.setTarget(mouseXPos, mouseYPos);
+                    dot.update();
+                    dot.draw(ctx);
+                    drawMediumText("Shards: " + shards, 950, 200, "red");
+                } else if (gameScreen === "lose") {
+                    drawLargeText("You Lose!", 520, 250, "red");
+
+                    losePlayAgainBtn.draw(ctx, mouseXPos, mouseYPos);
+                    loseUpgradesBtn.draw(ctx, mouseXPos, mouseYPos);
+                    loseSettingsBtn.draw(ctx, mouseXPos, mouseYPos);
+                    loseMenuBtn.draw(ctx, mouseXPos, mouseYPos);
+
+                    if (losePlayAgainBtn.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
+                        mouseLeftDown = false;
+                    if (loseUpgradesBtn.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
+                        mouseLeftDown = false;
+                    if (loseSettingsBtn.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
+                        mouseLeftDown = false;
+                    if (loseMenuBtn.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
+                        mouseLeftDown = false;
+                }
+
+
+                window.requestAnimationFrame(draw);
+            }
+
+            init();
+            draw();
+        </script>
+    </body>
+</html>
