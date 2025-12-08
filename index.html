@@ -437,7 +437,7 @@
                 playerHealth = playerMaxHealth;
                 playerHealthBar.set(playerMaxHealth);
 
-                // Reset arena
+                // Reset arena position
                 dot.x = 600;
                 dot.y = 350;
                 dot.setTarget(600, 350);
@@ -446,15 +446,16 @@
                 enemies = [];
                 enemyProjectiles = [];
 
-                // RESET WAVES
-                wave = 1;
-                waveBudget = 5;
-                waveInProgress = false;
-                lastWaveEnd = Date.now();
 
-                // Start game
+                // wave = selectedWave; (arena mode will handle this cleanly)
+
+                waveInProgress = false;
+                waveBudget = 5;
+                lastWaveEnd = 0;
+
                 gameScreen = "arena1";
             }
+
 
             function spawnEnemy(config) {
                 var spawnX = arenaX + config.size + Math.random() * (arenaSize - config.size * 2);
@@ -554,9 +555,12 @@
              * sets the minimum to be at least 1 and the new highest will be 5 less than your highest
              */
             function updateSelectableWave() {
-                var minAllowed = Math.max(1, highestWave - 5);
-                selectedWave = Math.max(minAllowed, Math.min(selectedWave, highestWave));
+                let minAllowed = Math.max(1, highestWave - 5);
+                let maxAllowed = highestWave;
+
+                selectedWave = Math.min(Math.max(selectedWave, minAllowed), maxAllowed);
             }
+
 
 
             function draw() {
@@ -592,15 +596,26 @@
                 } else if (gameScreen === "arena1") {
 
                     if (!arenaOpen) {
+                        arenaOpen = true;
+
+                        // Reset arena positioning only
                         dot.x = 600;
                         dot.y = 350;
                         dot.setTarget(600, 350);
-                        arenaOpen = true;
-                        wave = 0;
+
                         enemies = [];
                         enemyProjectiles = [];
                         lastEnemySpawn = Date.now();
+
+                        // Only set wave if this is a NEW run, not a resume
+                        if (gameScreen === "arena1" && waveInProgress === false && enemies.length === 0) {
+                            wave = selectedWave;
+                            waveBudget = 5 + (wave - 1); // ensure budget scales properly
+                            lastWaveEnd = 0;
+                        }
                     }
+
+
 
 
                     //Wave system
@@ -612,13 +627,17 @@
                     if (waveInProgress && enemies.length === 0) {
                         waveInProgress = false;
                         lastWaveEnd = Date.now();
+
+
+
                         wave++;
-                        waveBudget = Math.min(30, waveBudget + 1);  // difficulty scaling at a max of 30
                         if (wave > highestWave) {
                             highestWave = wave;
-
+                            updateSelectableWave();
                         }
+
                     }
+
 
 
                     playerHealthBar.draw(ctx);
