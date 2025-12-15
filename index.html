@@ -23,6 +23,8 @@
             var playerMaxHealth = 10;
             var playerHealth = 10;
             var shards = 0;
+            var prestigePoints = 0;
+            var prestiged = false;
             var wave = 1;
             var waveBudget = 5;        // how many total weight points the wave can spawn
             var waveInProgress = false;
@@ -44,6 +46,20 @@
             var enemySpawnInterval = 5000; // 10 seconds
             var playerHitInterval = 1000;
 
+            // === UPGRADE VALUES ===
+            var damageLevel = 0;
+            var healthLevel = 0;
+            var speedLevel = 0;
+            var rangeLevel = 0;
+            var sizeLevel = 0;
+
+            // Base costs
+            var speedCost = 5;
+            var rangeCost = 5;
+            var sizeCost = 5;
+            var damageCost = 10;
+            var healthCost = 10;
+
 
 
             // Dot class
@@ -59,6 +75,9 @@
                     this.targetX = x;
                     this.targetY = y;
                     this.ease = 0.01;
+                    this.baseEase = this.ease;
+                    this.baseRadius = this.radius;
+                    this.baseAttackMaxRadius = this.attackMaxRadius;
 
                     this.attackHitSet = new Set();
 
@@ -76,6 +95,11 @@
                 setTarget(x, y) {
                     this.targetX = x;
                     this.targetY = y;
+                }
+                applyUpgrades() {
+                    this.ease = this.baseEase + speedLevel * 0.003;
+                    this.radius = this.baseRadius + sizeLevel * 2;
+                    this.attackMaxRadius = this.radius * (5 / 3) + rangeLevel * 5;
                 }
 
                 attack() {
@@ -348,23 +372,57 @@
                 gameScreen = "arena1";
                 updateSelectableWave();
                 wave = selectedWave;
-                startWave();
+                dot.attackDamage = 1 + damageLevel;
 
+                playerMaxHealth = 10 + healthLevel * 2;
+                playerHealth = playerMaxHealth;
+                playerHealthBar.maxValue = playerMaxHealth;
+                playerHealthBar.set(playerHealth);
+
+                startWave();
                 arenaOpen = false;
             });
             var backButton = new Button("Back", 10, 10, 75, 25, "white", "black", 10, function () {
                 gameScreen = "menu";
                 arenaOpen = false;
             });
+            var upgradesBackButton = new Button("Back", 10, 10, 75, 25, "white", "black", 10, function () {
+                gameScreen = "mainUpgrades";
+            })
             var upgradeButton = new Button("Upgrades", 540, 550, 100, 50, "white", "black", 10, function () {
                 gameScreen = "mainUpgrades";
             });
-            var mainDamageUpgradesButton = new Button("Damage", 100, 100, 100, 50, "white", "black", 10, function () {
-                gameScreen = "damageUpgrades";
-            });
-            var mainHealthUpgradesButton = new Button("Health", 500, 100, 100, 50, "white", "black", 10, function () {
+
+            var mainHealthUpgradesButton = new Button("Health", 180, 220, 260, 90, "white", "black", 70, function () {
                 gameScreen = "healthUpgrades";
             });
+
+            var mainDamageUpgradesButton = new Button("Damage", 470, 220, 260, 90, "white", "black", 65, function () {
+                gameScreen = "damageUpgrades";
+            });
+
+            var mainSpeedUpgradesButton = new Button("Speed", 760, 220, 260, 90, "white", "black", 75, function () {
+                gameScreen = "speedUpgrades";
+            });
+
+            var mainRangeUpgradesButton = new Button("Range", 180, 350, 260, 90, "white", "black", 75, function () {
+                gameScreen = "rangeUpgrades";
+            });
+
+            var mainSizeUpgradesButton = new Button("Size", 470, 350, 260, 90, "white", "black", 85, function () {
+                gameScreen = "sizeUpgrades";
+            });
+
+            var mainPrestigeUpgradesButton = new Button("Prestige", 760, 350, 260, 90, "white", "black", 55, function () {
+                gameScreen = "prestigeUpgrades";
+            });
+            var prestigeButton = new Button("Prestige?", 760, 350, 260, 90, "white", "black", 55, function () {
+                if (totalShardsCollected >= 1000000) {
+                    prestiged = true;
+                }
+            });
+
+
             var losePlayAgainButton = new Button("Play Again", 500, 350, 200, 60, "white", "black", 25, function () {
                 restartGame();
             });
@@ -488,7 +546,7 @@
                 shootRate: 180,
                 weight: 2,
                 shardsDrop: 1
-            }
+            };
             var heavyEnemy = {
                 size: 35,
                 health: 5,
@@ -499,7 +557,7 @@
                 shootRate: 150,
                 weight: 3,
                 shardsDrop: 2
-            }
+            };
             /**
              * Start wave function 
              */
@@ -555,8 +613,9 @@
              * sets the minimum to be at least 1 and the new highest will be 5 less than your highest
              */
             function updateSelectableWave() {
-                let minAllowed = Math.max(1, highestWave - 5);
-                let maxAllowed = highestWave;
+                var minAllowed = Math.max(1, highestWave - 5);
+                var maxAllowed = highestWave;
+
 
                 selectedWave = Math.min(Math.max(selectedWave, minAllowed), maxAllowed);
             }
@@ -592,21 +651,17 @@
                     ctx.fillStyle = "white";
                     ctx.font = "28px Courier";
                     ctx.fillText("Starting Wave: " + selectedWave, 460, 350);
-
                 } else if (gameScreen === "arena1") {
 
                     if (!arenaOpen) {
                         arenaOpen = true;
-
                         // Reset arena positioning only
                         dot.x = 600;
                         dot.y = 350;
                         dot.setTarget(600, 350);
-
                         enemies = [];
                         enemyProjectiles = [];
                         lastEnemySpawn = Date.now();
-
                         // Only set wave if this is a NEW run, not a resume
                         if (gameScreen === "arena1" && waveInProgress === false && enemies.length === 0) {
                             wave = selectedWave;
@@ -627,9 +682,6 @@
                     if (waveInProgress && enemies.length === 0) {
                         waveInProgress = false;
                         lastWaveEnd = Date.now();
-
-
-
                         wave++;
                         if (wave > highestWave) {
                             highestWave = wave;
@@ -639,15 +691,13 @@
                     }
 
 
-
+                    dot.applyUpgrades();
                     playerHealthBar.draw(ctx);
-
                     // Update and draw enemies (iterate backwards so splice is safe)
                     for (var i = enemies.length - 1; i >= 0; i--) {
                         var enemyVar = enemies[i];
                         enemyVar.update(dot.x, dot.y);
                         enemyVar.draw(ctx);
-
                         // Damage enemy if hit by player's attack
                         // Damage enemy only once per attack animation
                         if (dot.isAttacking &&
@@ -655,15 +705,12 @@
                                 circleCollision(dot.x, dot.y, dot.attackRadius, enemyVar.x, enemyVar.y, enemyVar.size)) {
 
                             enemyVar.health -= dot.attackDamage;
-                            dot.attackHitSet.add(enemyVar);  // mark as hit for this attack
+                            dot.attackHitSet.add(enemyVar); // mark as hit for this attack
 
                             if (enemyVar.health <= 0) {
                                 var scale = Math.sqrt(wave) + (wave * 0.2);
                                 shards += Math.floor(enemyVar.shardsDrop * scale);
-
-
                                 enemies.splice(i, 1);
-
                             }
 
                         }
@@ -674,9 +721,6 @@
                     // Bullets
                     updateProjectiles();
                     drawProjectiles();
-
-
-
                     arenaRect(arenaX, arenaY, arenaSize, arenaSize, "white", 10);
                     backButton.draw(ctx, mouseXPos, mouseYPos);
                     if (backButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
@@ -688,7 +732,6 @@
                     dot.draw(ctx);
                     drawMediumText("Shards: " + shards, 950, 200, "cyan");
                     drawMediumText("Wave: " + wave, 950, 230, "white");
-
                 } else if (gameScreen === "lose") {
                     drawLargeText("You Lose!", 520, 250, "red");
                     losePlayAgainButton.draw(ctx, mouseXPos, mouseYPos);
@@ -703,11 +746,90 @@
                         mouseLeftDown = false;
                     if (loseMenuButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown))
                         mouseLeftDown = false;
-                } else if (gameScreen === "mainUgrades") {
-                    drawLargeText("Upgrades", 500, 25, "white");
+                } else if (gameScreen === "mainUpgrades") {
+
+                    drawLargeText("Upgrades", 520, 80, "white");
+                    drawMediumText("Shards: " + shards, 520, 130, "red");
+
                     mainDamageUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
                     mainHealthUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
+                    mainSpeedUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
+                    mainRangeUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
+                    mainSizeUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (!prestiged) {
+                        prestigeButton.draw(ctx, mouseXPos, mouseYPos);
+                    } else {
+                        mainPrestigeUpgradesButton.draw(ctx, mouseXPos, mouseYPos);
+
+                    }
+                    if (mainDamageUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    if (mainHealthUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    if (mainSpeedUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    if (mainRangeUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    if (mainSizeUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+
+                    if (mainPrestigeUpgradesButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "healthUpgrades") {
+                    drawLargeText("Health Upgrades", 450, 100, "white");
+                    drawMediumText("Health Level: " + healthLevel, 450, 300, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+
+                } else if (gameScreen === "damageUpgrades") {
+
+                    drawMediumText("Damage Level: " + damageLevel, 450, 230, "white");
+                    drawLargeText("Damage Upgrades", 450, 100, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "speedUpgrades") {
+                    drawMediumText("Speed Level: " + speedLevel, 450, 230, "white");
+                    drawLargeText("Speed Upgrades", 450, 100, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "rangeUpgrades") {
+                    drawMediumText("Range Level: " + rangeLevel, 450, 230, "white");
+                    drawLargeText("Range Upgrades", 450, 100, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "sizeUpgrades") {
+                    drawMediumText("Size Level: " + sizeLevel, 450, 230, "white");
+                    drawLargeText("Size Upgrades", 450, 100, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                } else if (gameScreen === "prestigeUpgrades") {
+                    drawMediumText("Prestige points: " + prestigePoints, 450, 230, "white");
+                    drawLargeText("Prestige Upgrades", 450, 100, "white");
+                    upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
                 }
+
+
+
+
 
 
                 window.requestAnimationFrame(draw);
