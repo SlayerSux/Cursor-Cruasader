@@ -67,7 +67,7 @@
             var rangeLevel = 0;
             var sizeLevel = 0;
             var UPGRADE_COST = 100;
-
+            var playerSize = 25 - sizeLevel/2;
             // Base costs
             var speedCost = 5;
             var rangeCost = 5;
@@ -715,7 +715,7 @@
 
 
 
-            var dot = new Dot(600, 350, 25, "white", arenaX, arenaY, arenaSize);
+            var dot = new Dot(600, 350, playerSize, "white", arenaX, arenaY, arenaSize);
             var startButton = new Button("Start", 550, 360, 100, 50, "white", "black", 10, function () {
                 gameScreen = "arena1";
 
@@ -871,7 +871,7 @@
                     return;
 
                 shards -= UPGRADE_COST;
-                dot.radius = Math.max(5, dot.radius - 0.5);
+                sizeLevel -= 1;
             });
 
 
@@ -1392,8 +1392,8 @@
                         mouseLeftDown = false;
                     }
                 } else if (gameScreen === "rangeUpgrades") {
-                    radiusUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
-                    if (radiusUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                    rangeUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (rangeUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
                         mouseLeftDown = false;
                     }
 
@@ -1403,7 +1403,10 @@
                         mouseLeftDown = false;
                     }
                 } else if (gameScreen === "sizeUpgrades") {
-                    drawMediumText("Size Level: " + sizeLevel, 450, 230, "white");
+                    sizeUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (sizeUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
                     drawLargeText("Size Upgrades", 450, 100, "white");
                     upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
                     if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
