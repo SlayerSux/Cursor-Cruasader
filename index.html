@@ -67,7 +67,7 @@
             var rangeLevel = 0;
             var sizeLevel = 0;
             var UPGRADE_COST = 100;
-            var playerSize = 25 - sizeLevel/2;
+
             // Base costs
             var speedCost = 5;
             var rangeCost = 5;
@@ -715,7 +715,7 @@
 
 
 
-            var dot = new Dot(600, 350, playerSize, "white", arenaX, arenaY, arenaSize);
+            var dot = new Dot(600, 350, 25, "white", arenaX, arenaY, arenaSize);
             var startButton = new Button("Start", 550, 360, 100, 50, "white", "black", 10, function () {
                 gameScreen = "arena1";
 
@@ -871,7 +871,7 @@
                     return;
 
                 shards -= UPGRADE_COST;
-                sizeLevel -= 1;
+                dot.radius = Math.max(5, dot.radius - 0.5);
             });
 
 
@@ -1085,18 +1085,24 @@
             /**
              * sets the minimum to be at least 1 and the new highest will be 5 less than your highest
              */
+            function getMaxSelectableWave() {
+                var max = highestWaveReached - 5;
+
+                if (max < 1)
+                    max = 1;
+                if (max > 20)
+                    max = 20;
+
+                return max;
+            }
+
             function updateSelectableWave() {
-                var minAllowed = Math.min(1, 10);
-                var maxAllowed = 25;
-                //if (selectedWave < MIN_WAVE) {
-                //selectedWave = MIN_WAVE;
-                //}
-                //if (selectedWave > MAX_WAVE) {
-                //selectedWave = MAX_WAVE;
-                //}
+                var minAllowed = 1;
+                var maxAllowed = getMaxSelectableWave();
 
                 selectedWave = Math.min(Math.max(selectedWave, minAllowed), maxAllowed);
             }
+
             function endGame() {
                 if (wave >= 250 && totalPrestiges >= 1) {
                     gameScreen === "endGame";
@@ -1144,6 +1150,7 @@
 
                         enemies = [];
                         enemyProjectiles = [];
+                        wave = selectedWave;
 
                         if (lastWaveEnd === 0) {
                             lastWaveEnd = Date.now();
@@ -1392,8 +1399,8 @@
                         mouseLeftDown = false;
                     }
                 } else if (gameScreen === "rangeUpgrades") {
-                    rangeUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
-                    if (rangeUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                    radiusUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (radiusUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
                         mouseLeftDown = false;
                     }
 
@@ -1403,22 +1410,19 @@
                         mouseLeftDown = false;
                     }
                 } else if (gameScreen === "sizeUpgrades") {
-                    sizeUpgradeButton.draw(ctx, mouseXPos, mouseYPos);
-                    if (sizeUpgradeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
-                        mouseLeftDown = false;
-                    }
+                    drawMediumText("Size Level: " + sizeLevel, 450, 230, "white");
                     drawLargeText("Size Upgrades", 450, 100, "white");
                     upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
                     if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
                         mouseLeftDown = false;
                     }
-                //} else if (gameScreen === "prestigeUpgrades") {
-                  //  drawMediumText("Prestige points: " + prestigePoints, 450, 230, "white");
-                   // drawLargeText("Prestige Upgrades", 450, 100, "white");
-                   // upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
-                   // if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
-                   //     mouseLeftDown = false;
-                   // }
+                    //} else if (gameScreen === "prestigeUpgrades") {
+                    //  drawMediumText("Prestige points: " + prestigePoints, 450, 230, "white");
+                    // drawLargeText("Prestige Upgrades", 450, 100, "white");
+                    // upgradesBackButton.draw(ctx, mouseXPos, mouseYPos);
+                    // if (upgradesBackButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                    //     mouseLeftDown = false;
+                    // }
                 } else if (gameScreen === "endGame") {
                     drawLargeText("YOU WIN!", 520, 250, "lime");
                     drawMediumText("Final Wave: " + FINAL_BOSS_WAVE, 520, 300, "white");
