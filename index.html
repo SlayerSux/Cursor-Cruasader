@@ -1027,7 +1027,7 @@
                 while (budget > 0) {
                     var spawned = false;
 
-                    if (wave < 5) {
+                    if (wave < 5) { // if the budget is enough then the enemy will spawn
                         if (budget >= basicEnemy.weight) {
                             spawnEnemy(basicEnemy);
                             budget -= basicEnemy.weight;
@@ -1045,12 +1045,16 @@
                             spawned = true;
                         }
 
-                    } else if (wave < 50) {
+                    } else if (wave < 525 {
                         if (budget >= sniperEnemy.weight) {
                             spawnEnemy(sniperEnemy);
                             budget -= sniperEnemy.weight;
                             spawned = true;
                         }
+                        if(budget >= heavyEnemy.weight){
+                            spawnEnemy(heavyEnemy);
+                            budget -= heavyEnemy.weight;
+                            spawned = true;
                     }
 
                     if (!spawned) {
@@ -1110,7 +1114,7 @@
                 }
             }
 
-
+//draw
             function draw() {
                 var currentTime = Date.now(); //getting the time in milliseconds
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1202,8 +1206,8 @@
                             dot.attackHitSet.add(boss);
                         }
 
-                        // Boss death
-                        // Boss death
+                        
+                        
                         // Boss death
                         if (boss.health <= 0) {
                             shards += boss.shardDrop;
@@ -1229,7 +1233,7 @@
 
 
                     }
-                    if (!bossActive) {
+                    if (!bossActive) {// if the boss is not active then the enemies will spawn normally
                         for (var i = enemies.length - 1; i >= 0; i--) {
                             var enemyVar = enemies[i];
                             enemyVar.update(dot.x, dot.y);
@@ -1325,7 +1329,7 @@
                     if (prestigeButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
                         mouseLeftDown = false;
                     }
-
+//setting up the menud for upgrading
                 } else if (gameScreen === "mainUpgradesPrestiged") {
 
                     drawLargeText("Upgrades", 520, 80, "white");
