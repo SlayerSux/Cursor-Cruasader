@@ -142,11 +142,11 @@
                     this.drawHealthBar();
                 }
 
-                drawHealthBar() {
+                drawHealthBar() { //draw the health bar at the top of the screen with lines for phases
                     var barWidth = 400;
                     var barHeight = 15;
                     var x = canvas.width / 2 - barWidth / 2;
-                    var y = 20;
+                    var y = 40;
 
                     ctx.fillStyle = "red";
                     ctx.fillRect(x, y, barWidth, barHeight);
@@ -165,7 +165,7 @@
                     }
                 }
 
-                update() {
+                update() { //update the phases if the boss gets lowk enough
                     this.checkPhase();
 
                     if (this.currentPhase === 1)
@@ -176,7 +176,7 @@
                         this.phase3();
                 }
 
-                checkPhase() {
+                checkPhase() { //check the phases for the attaco 
                     var newPhase = Math.floor((this.maxHealth - this.health) / this.phaseHP) + 1;
 
                     if (newPhase > this.currentPhase && newPhase <= this.phases) {
@@ -186,7 +186,7 @@
                 }
 
                 onPhaseChange() {
-                    // VERY small scaling like you wanted
+                    // scald the stats per phase
                     this.bulletDamage *= 1.1;
                     this.bulletSpeed *= 1.03;
                     this.bulletRotationSpeed *= 1.02;
