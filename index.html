@@ -1104,12 +1104,7 @@
                 selectedWave = Math.min(Math.max(selectedWave, minAllowed), maxAllowed);
             }
 
-            function endGame() {
-                if (wave >= 25 && totalPrestiges >= 0) {
-                    gameScreen === "endGame";
-                }
-            }
-
+          
 //draw
             function draw() {
                 var currentTime = Date.now(); //getting the time in milliseconds
@@ -1461,6 +1456,7 @@
 
 
                 window.requestAnimationFrame(draw);
+            }
             }
             window.addEventListener("load", init, false);
             draw();
