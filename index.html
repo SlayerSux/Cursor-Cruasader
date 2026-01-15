@@ -709,17 +709,17 @@
 
 
 
-            var currentBiome = "green";
+            var currentBiome = "lightgreen";
             var dot = new Dot(600, 350, playerRadius, "white", arenaX, arenaY, arenaSize);
             
             var gardenButton = new Button("Garden", 200, 650, 100, 25, "black", "green", 10, function (){
-            currentBiome = "green";
+            currentBiome = "lightgreen";
             });
             var desertButton = new Button("Desert", 310, 650, 100, 25, "black", "tan", 10, function (){
-            currentBiome = "tan";
+            currentBiome = "khaki";
             });
             var oceanButton = new Button("Ocean", 420, 650, 100, 25, "black", "blue", 10, function (){
-            currentBiome = "blue";
+            currentBiome = "cornflowerblue";
             });
 
             var startButton = new Button("Start", 550, 360, 100, 50, "white", "black", 10, function () {
@@ -749,7 +749,7 @@
                     gameScreen = "mainUpgradesPrestiged";
                 }
             });
-            var upgradeButton = new Button("Upgrades", 540, 550, 100, 50, "white", "black", 10, function () {
+            var upgradeButton = new Button("Upgrades", 530, 550, 135, 50, "white", "black", 10, function () {
                 if (!prestiged) {
                     gameScreen = "mainUpgradesUnprestiged";
                 } else {
@@ -1104,7 +1104,12 @@
                 selectedWave = Math.min(Math.max(selectedWave, minAllowed), maxAllowed);
             }
 
-          
+            function endGame() {
+                if (wave >= 25 && totalPrestiges >= 0) {
+                    gameScreen === "endGame";
+                }
+            }
+
 //draw
             function draw() {
                 var currentTime = Date.now(); //getting the time in milliseconds
@@ -1456,7 +1461,6 @@
 
 
                 window.requestAnimationFrame(draw);
-            
             }
             window.addEventListener("load", init, false);
             draw();
