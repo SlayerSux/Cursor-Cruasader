@@ -1115,7 +1115,7 @@
 
             function calculateWaveBudget(wave) {
                 // Simple, predictable scaling
-                return Math.min(4 + wave * 2, maxWaveBudget);
+                return Math.min(wave, maxWaveBudget);
             }
 
             /**
