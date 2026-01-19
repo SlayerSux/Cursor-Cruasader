@@ -702,26 +702,44 @@
                     ctx.strokeRect(this.x, this.y, this.w, this.h);
                 }
             }
-            
 
-            
+
+
 
 
 
 
             var currentBiome = "lightgreen";
             var dot = new Dot(600, 350, playerRadius, "white", arenaX, arenaY, arenaSize);
-            
-            var gardenButton = new Button("Garden", 200, 650, 100, 25, "black", "green", 10, function (){
-            currentBiome = "lightgreen";
-            });
-            var desertButton = new Button("Desert", 310, 650, 100, 25, "black", "tan", 10, function (){
-            currentBiome = "khaki";
-            });
-            var oceanButton = new Button("Ocean", 420, 650, 100, 25, "black", "blue", 10, function (){
-            currentBiome = "cornflowerblue";
-            });
 
+            var gardenButton = new Button("Garden", 30+20, 650, 110, 25, "black", "lightgreen", 10, function () {
+                currentBiome = "lightgreen";
+            });
+            var desertButton = new Button("Desert", 150+20, 650, 110, 25, "black", "khaki", 10, function () {
+                currentBiome = "khaki";
+            });
+            var oceanButton = new Button("Ocean", 270+20, 650, 100, 25, "black", "cornflowerblue", 10, function () {
+                currentBiome = "cornflowerblue";
+            });
+            var voidButton = new Button("Void", 380+20, 650, 80, 25, "black", "white", 10, function () {
+                currentBiome = "black";
+            });
+            var hellButton = new Button("Hell", 470+20, 650, 80, 25, "black", "red", 10, function () {
+                currentBiome = "red";
+            });
+            var savannahButton = new Button("Savannah", 560+20, 650, 140, 25, "black", "tan", 10, function () {
+                currentBiome = "tan";
+            });
+            var swampButton = new Button("Swamp", 710+20, 650, 100, 25, "black", "olive", 10, function () {
+                currentBiome = "olive";
+            });
+            var castleButton = new Button("castle", 820+20, 650, 110, 25, "black", "lightslategrey", 10, function () {
+                currentBiome = "lightslategrey";
+            });
+            var fallenCityButton = new Button("Fallen City", 940+20, 650, 180, 25, "black", "indianred", 10, function () {
+                currentBiome = "indianred";
+            });
+            
             var startButton = new Button("Start", 550, 360, 100, 50, "white", "black", 10, function () {
                 gameScreen = "arena1";
 
@@ -739,9 +757,11 @@
             });
 
             var backButton = new Button("Back", 10, 10, 75, 25, "white", "black", 10, function () {
-                gameScreen = "menu";
+                resetWaveState();
                 arenaOpen = false;
+                gameScreen = "menu";
             });
+
             var upgradesBackButton = new Button("Back", 10, 10, 75, 25, "white", "black", 10, function () {
                 if (!prestiged) {
                     gameScreen = "mainUpgradesUnprestiged";
@@ -978,7 +998,7 @@
 
             var basicEnemy = {
                 size: 20,
-                health: 3,
+                health: 3+ 1.5*Math.sqrt(wave),
                 damage: 1,
                 speed: 0.3,
                 colour: "red",
@@ -989,7 +1009,7 @@
             };
             var sniperEnemy = {
                 size: 18,
-                health: 2,
+                health: 2+ Math.sqrt(wave),
                 damage: 1.5,
                 speed: 0.2,
                 colour: "orange",
@@ -1000,7 +1020,7 @@
             };
             var heavyEnemy = {
                 size: 35,
-                health: 5,
+                health: 5+ 2*Math.sqrt(wave),
                 damage: 1,
                 speed: 0.1,
                 colour: "blue",
@@ -1114,8 +1134,8 @@
             function draw() {
                 var currentTime = Date.now(); //getting the time in milliseconds
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                solidRect(0,0, 1200, 700, currentBiome);
-            
+                solidRect(0, 0, 1200, 700, currentBiome);
+
                 if (gameScreen === "menu") {
                     drawLargeText("Welcome to Cursor Crusader", 350, 233, "white");
                     drawMediumText("Avoid projectiles and click on the enemies", 320, 260, "white");
@@ -1148,7 +1168,30 @@
                     if (oceanButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
                         mouseLeftDown = false;
                     }
-
+                    hellButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (hellButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    savannahButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (savannahButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    voidButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (voidButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    swampButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (swampButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    fallenCityButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (fallenCityButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
+                    castleButton.draw(ctx, mouseXPos, mouseYPos);
+                    if (castleButton.handleClick(mouseXPos, mouseYPos, mouseLeftDown)) {
+                        mouseLeftDown = false;
+                    }
                     // Text showing the selected wave
                     ctx.fillStyle = "white";
                     ctx.font = "28px Courier";
