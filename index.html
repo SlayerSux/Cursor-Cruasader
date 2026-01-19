@@ -1000,7 +1000,7 @@
                 size: 20,
                 health: 3+ 1.5*Math.sqrt(wave),
                 damage: 1,
-                speed: 0.3,
+                speed: 0.5,
                 colour: "red",
                 bulletSpeed: 2,
                 shootRate: 2000,
@@ -1011,7 +1011,7 @@
                 size: 18,
                 health: 2+ Math.sqrt(wave),
                 damage: 1.5,
-                speed: 0.2,
+                speed: 0.4,
                 colour: "orange",
                 bulletSpeed: 3,
                 shootRate: 2500,
@@ -1020,16 +1020,26 @@
             };
             var heavyEnemy = {
                 size: 35,
-                health: 5+ 2*Math.sqrt(wave),
+                health: 5+ 2.5*Math.sqrt(wave),
                 damage: 1,
-                speed: 0.1,
+                speed: 0.3,
                 colour: "blue",
-                bulletSpeed: 1,
+                bulletSpeed: 1.5,
                 shootRate: 2000,
                 weight: 3,
                 shardsDrop: 2
             };
-
+            var miniBossEnemy = {
+                size: 50,
+                health: 20 + 10*Math.sqrt(wave),
+                damage: 2,
+                speed: 0.2
+                colour: "darkgreen",
+                bulletSpeed: 1,
+                shootRate: 2500
+                weight: 10,
+                shardsDrop: 10
+            }
             /**
              * Start wave function 
              */
@@ -1069,6 +1079,11 @@
                         if (budget >= heavyEnemy.weight) {
                             spawnEnemy(heavyEnemy);
                             budget -= heavyEnemy.weight;
+                            spawned = true;
+                        }
+                        if (budget >= miniBossEnemy.weight){
+                            spawnEnemy(miniBossEnemy);
+                            budget -= miniBossEnemy.weight;
                             spawned = true;
                         }
                     }
